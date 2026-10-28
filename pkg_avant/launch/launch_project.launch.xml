@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node pkg="pkg_avant" exec="..."/>
+    <node pkg="pkg_avant" exec="..."/>
+    <node pkg="pkg_avant" exec="...">
+        <param name="texto_msg" value="'Mensagem de teste'"/>
+        <param name="start_value" value="100"/>
+    </node>
+</launch>
