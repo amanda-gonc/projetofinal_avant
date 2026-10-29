@@ -42,10 +42,8 @@ class TraineeVisionNode(Node):
         resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False) # variavel resultado recebe o vetor de resposta da rede
         figuras = resultado[0].boxes 
 
-        for figura in figuras: # verifica se a figura foi avistada em algum momento, ou seja, se ela esta no vetor 
+        for figura in figuras: # verifica se a figura foi avistada em algum momento
             classe = int(figura.cls)
-
-            # Aqui acho que temos que criar um server para mandar uma mensagem para o nó de integração avisando a figura e a cor avistada 
 
             if classe == 0 :
                 self.get_logger().info("Circulo Avistado!", once=True)
