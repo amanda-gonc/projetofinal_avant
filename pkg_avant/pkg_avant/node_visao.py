@@ -7,8 +7,8 @@ from sensor_msgs.msg import Image
 from ultralytics import YOLO
 
 # =========== CODIGOS DA REDE NEURAL ==============
-# o resultado da rede vem em forma de vetor, para cada classe há um número associado
-
+# a rede devolve um array com as figuras detectadas em cada frame
+# cada forma geométrica é associada a um número
 # Circulo Azul = 0
 # Triângulo vermelho = 1
 # Hexagono verde = 2
@@ -39,10 +39,11 @@ class TraineeVisionNode(Node):
         cv.waitKey(1)
 
     def geometrics(self, img):
-        resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False) # variavel resultado recebe o vetor de resposta da rede
+        resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False) # A variavel resultado recebe a resposta da rede para o frame atual
         figuras = resultado[0].boxes 
+        # figuras recebe a lista de figuras detectadas no frame
 
-        for figura in figuras: # verifica se a figura foi avistada em algum momento
+        for figura in figuras:
             classe = int(figura.cls)
 
             if classe == 0 :
