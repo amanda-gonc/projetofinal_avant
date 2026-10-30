@@ -9,9 +9,9 @@ from ultralytics import YOLO
 # =========== CODIGOS DA REDE NEURAL ==============
 # a rede devolve um array com as figuras detectadas em cada frame
 # cada forma geométrica é associada a um número
-# Circulo Azul = 0
-# Triângulo vermelho = 1
-# Hexagono verde = 2
+# Circulo = 0
+# Triângulo = 1
+# Hexagono = 2
 # Base de pouso = 3
 
 # IMPORTANTE: Para testar a rede neural na simulação é necessário adicionar a pasta models no pkg_avant do container de voces, é la que a rede fica 
@@ -45,6 +45,25 @@ class TraineeVisionNode(Node):
 
         for figura in figuras:
             classe = int(figura.cls)
+            x1, y1, x2, y2 = figura.xyxy[0].tolist() # coordenadas da bounding box
+            
+            cx = (x1 + x2)/2   # centro no eixo x
+            cy = (y1 + y2)/2   # centro no eixo y
+
+            Xs = int(cx + (cx * 0.1))  # canto superior da area delimitada
+            Ys = int(cy + (cy * 0.1))
+
+            Xi = int(cx - (cx * 0.1))  # canto inferior da area delimitada
+            Yi = int(cy - (cy * 0.1))
+
+            if classe == 0 or classe == 1 or classe == 2:
+                # recorta um retângulo no centro da bounding box e converte a imagem para RGB
+                img_crop_rgb = img[Yi:Ys, Xi:Xs] 
+                img_crop_rgb = cv.cvtColor(img_crop_rgb, cv.COLOR_BGR2RGB)
+
+                cv.rectangle(img, (Xs, Ys), (Xi, Yi), (0, 255, 0), 2)
+                cv.imshow('img_crop_rgb', img_crop_rgb)
+                cv.waitKey(1)
 
             if classe == 0 :
                 self.get_logger().info("Circulo Avistado!", once=True)
