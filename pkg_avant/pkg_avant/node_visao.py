@@ -50,11 +50,12 @@ class TraineeVisionNode(Node):
             cx = (x1 + x2)/2   # centro no eixo x
             cy = (y1 + y2)/2   # centro no eixo y
 
-            Xs = int(cx + (cx * 0.1))  # canto superior da area delimitada
-            Ys = int(cy + (cy * 0.1))
+            Xs = int(cx + (abs(x1 - x2) * 0.1))  # cantos da bounding box
+            Ys = int(cy + (abs(y1 - y2) * 0.1))
 
-            Xi = int(cx - (cx * 0.1))  # canto inferior da area delimitada
-            Yi = int(cy - (cy * 0.1))
+            Xi = int(cx - (abs(x1 - x2) * 0.1))  
+            Yi = int(cy - (abs(y1 - y2) * 0.1))
+
 
             if classe == 0 or classe == 1 or classe == 2:
                 # recorta um retângulo no centro da bounding box e converte a imagem para RGB
