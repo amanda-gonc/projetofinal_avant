@@ -6,10 +6,10 @@ from std_msgs.msg import Int32, String
 
 class NodeIntegracao(Node):
     def __init__(self):
-        super(). __init__(node_integracao)
+        super(). __init__("node_integracao")
 
         self.create_subscription(Int32, '/deteccao', self.callback_deteccao, 10) #visao deve publicar a figura que enxerga, coloquei int mas vai depender do que a visao publicar
-        self.pub_sequencia = self.create_publisher(String, '/sequencia_sons', 10) #saida de sons
+        self.pub_sequencia = self.create_publisher(String, '/sequencia_sons', 10) #publica a sequencia de sons
         self.get_logger().info('Nó de integração iniciado')
 
     def callback_deteccao(self, msg):
@@ -17,9 +17,8 @@ class NodeIntegracao(Node):
         pass
 
     def executar_sequencia(self):
-        sequencia = self.registro.sequencia()
         # tocar o áudio de cada classe, na ordem de `sequencia`
-        # publicar em self.pub_sequencia os audios
+        # publicar em self.pub_sequencia informando a sequencia de sons
         pass
 
 
