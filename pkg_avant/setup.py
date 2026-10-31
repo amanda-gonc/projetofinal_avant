@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'visao = pkg_avant.node_visao:main',
+            'navegacao = pkg_avant.node_navegacao:main',
         ],
     },
 )

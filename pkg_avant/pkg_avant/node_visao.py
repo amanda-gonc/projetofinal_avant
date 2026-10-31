@@ -25,7 +25,32 @@ from ultralytics import YOLO
 class TraineeVisionNode(Node):
 
     def __init__(self):
+        # ---- DEFINIÇÃO DE CORES EM HSV ----
+        # ---- VERMELHO (usa duas faixas por causa do wrap-around do Hue) ----
+        self.RED_LOWER1 = [0, 100, 100]
+        self.RED_UPPER1 = [10, 255, 255]
+        self.RED_LOWER2 = [160, 100, 100]
+        self.RED_UPPER2 = [179, 255, 255]
+
+        # ---- VERDE ----
+        self.GREEN_LOWER = [45, 150, 100]
+        self.GREEN_UPPER = [80, 255, 255]
+
+        # ---- AZUL ----
+        self.BLUE_LOWER = [100, 150, 0]
+        self.BLUE_UPPER = [140, 255, 255]
+
+        self.COLOR_RANGES = {
+            'vermelho': [(self.RED_LOWER1, self.RED_UPPER1), (self.RED_LOWER2, self.RED_UPPER2)],
+            'verde': [(self.GREEN_LOWER, self.GREEN_UPPER)],
+            'azul': [(self.BLUE_LOWER, self.BLUE_UPPER)]
+        }
+
+        self.found_shapes = {}  # Dicionário para armazenar as formas encontradas
+
         super().__init__('trainee_vision_node')
+
+        self.USE_NEURAL_NETWORK = False  # Defina como True para usar a rede neural, False para visão clássica
 
         self.subscriber_cam = self.create_subscription(msg_type=Image,
                                                        topic='/camera/image_raw',
@@ -40,7 +65,10 @@ class TraineeVisionNode(Node):
 
     def read_im(self, img_cv : Image):
         img_cv = self.bridge.imgmsg_to_cv2(img_cv, desired_encoding='bgr8')
-        self.geometrics(img_cv)
+        if self.USE_NEURAL_NETWORK:
+            self.geometrics(img_cv)
+        else:
+            self.classic_vision(img_cv)
         cv.imshow('img_cv', img_cv)
         cv.waitKey(1)
 
@@ -50,31 +78,95 @@ class TraineeVisionNode(Node):
 
         for figura in figuras: 
             classe = int(figura.cls)
+            # Obtendo as coordenadas do retângulo delimitador da figura e convertendo para inteiros:
             x1, y1, x2, y2 = figura.xyxy[0].tolist()
-
-            cx = (x1 + x2)/2   # centro da bounding box no eixo x
-            cy = (y1 + y2)/2   # centro da bounding box no eixo y
-
-            Xs = int(cx + (abs(x1 - x2) * 0.1))  # canto superior da bounding box
-            Ys = int(cy + (abs(y1 - y2) * 0.1))
-
-            Xi = int(cx - (abs(x1 - x2)* 0.1))  # canto inferior da bounding box
-            Yi = int(cy - (abs(y1 - y2) * 0.1))
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
             if classe == 0 or classe == 1 or classe == 2:
-                img_crop_rgb = img[Yi:Ys, Xi:Xs]
-                img_crop_rgb = cv.cvtColor(img_crop_rgb, cv.COLOR_BGR2RGB)
+                img_crop_bgr = img[y1:y2, x1:x2]
+                img_crop_rgb = cv.cvtColor(img_crop_bgr, cv.COLOR_BGR2RGB)
+                img_crop_hsv = cv.cvtColor(img_crop_bgr, cv.COLOR_BGR2HSV)
 
-                cv.rectangle(img, (Xs, Ys), (Xi, Yi), (0, 255, 0), 2)
-                cv.imshow('img_crop_rgb', img_crop_rgb)
+                # Encontra a cor predominante na imagem recortada em rgb usando a mediana dos pixels
+                mask = np.zeros(img_crop_hsv.shape[:2], dtype=np.uint8)
+                if classe == 0:
+                    for lower, upper in self.COLOR_RANGES['azul']:
+                        lower_np = np.array(lower, dtype=np.uint8)
+                        upper_np = np.array(upper, dtype=np.uint8)
+                        mask += cv.inRange(img_crop_hsv, lower_np, upper_np)
+                elif classe == 1:
+                    for lower, upper in self.COLOR_RANGES['vermelho']:
+                        lower_np = np.array(lower, dtype=np.uint8)
+                        upper_np = np.array(upper, dtype=np.uint8)
+                        mask += cv.inRange(img_crop_hsv, lower_np, upper_np)
+                elif classe == 2:
+                    for lower, upper in self.COLOR_RANGES['verde']:
+                        lower_np = np.array(lower, dtype=np.uint8)
+                        upper_np = np.array(upper, dtype=np.uint8)
+                        mask += cv.inRange(img_crop_hsv, lower_np, upper_np)
+                pixels_rgb = img_crop_rgb[mask > 0]
+                avg_color = np.median(pixels_rgb, axis=0) if len(pixels_rgb) > 0 else np.array([0, 0, 0])
+
+                cv.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv.imshow('img_crop_rgb', img_crop_bgr)
                 cv.waitKey(1)
 
-                if classe == 0 :
-                    self.get_logger().info("Circulo Avistado!", once=True)
-                elif classe == 1 :
-                    self.get_logger().info("Triângulo vermelho Avistado!", once=True)
-                elif classe == 2 :
-                    self.get_logger().info("Hexagono verde Avistado!", once=True)
+                if classe == 0 and 'círculo' not in self.found_shapes:
+                    self.found_shapes['círculo'] = ['azul', avg_color]
+                    self.get_logger().info(F"Circulo azul Avistado! HEX = {avg_color}")
+                elif classe == 1 and 'triângulo' not in self.found_shapes:
+                    self.found_shapes['triângulo'] = ['vermelho', avg_color]
+                    self.get_logger().info(F"Triângulo vermelho Avistado! HEX = {avg_color}")
+                elif classe == 2 and 'hexágono' not in self.found_shapes:
+                    self.found_shapes['hexágono'] = ['verde', avg_color]
+                    self.get_logger().info(F"Hexagono verde Avistado! HEX = {avg_color}")
+
+
+    def classic_vision(self, img):
+        hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+
+        for color_name, ranges in self.COLOR_RANGES.items():
+            mask = np.zeros(hsv_image.shape[:2], dtype=np.uint8)
+            for lower, upper in ranges:
+                lower_np = np.array(lower, dtype=np.uint8)
+                upper_np = np.array(upper, dtype=np.uint8)
+                mask += cv.inRange(hsv_image, lower_np, upper_np)
+
+
+            contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+            for contour in contours:
+                area = cv.contourArea(contour)
+                if area > 500:  # Ajuste o valor conforme necessário
+                    x, y, w, h = cv.boundingRect(contour)
+
+                    img_crop_bgr = img[y:y+h, x:x+w]
+                    cv.imshow('img_crop', img_crop_bgr)
+                    cv.waitKey(1)
+
+                    # Encontra a cor predominante na imagem recortada em rgb usando a mediana dos pixels
+                    sub_mask = mask[y:y+h, x:x+w]
+                    img_crop_rgb = cv.cvtColor(img_crop_bgr, cv.COLOR_BGR2RGB)
+                    pixels_rgb = img_crop_rgb[sub_mask > 0]
+                    avg_color = np.median(pixels_rgb, axis=0) if len(pixels_rgb) > 0 else np.array([0, 0, 0])
+
+                    # Desenha o retângulo ao redor da forma detectada
+                    cv.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+                    # Encontra a forma geométrica aproximada (círculo, triângulo ou hexágono)
+                    approx = cv.approxPolyDP(contour, 0.04 * cv.arcLength(contour, True), True)
+                    shape = "unidentified"
+                    if len(approx) == 3 and color_name == "vermelho":
+                        shape = "triângulo"
+                    elif len(approx) == 6 and color_name == "verde":
+                        shape = "hexágono"
+                    elif len(approx) > 6 and color_name == "azul":
+                        shape = "círculo"
+                    
+                    # Verifica se a forma já foi detectada antes
+                    if shape not in self.found_shapes and shape != "unidentified":
+                        self.found_shapes[shape] = [color_name, avg_color]
+                        self.get_logger().info(f"{shape.capitalize()} {color_name} detectado! HEX = {avg_color}")
 
 
 
