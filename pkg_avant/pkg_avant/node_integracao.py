@@ -1,24 +1,53 @@
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import Int32, String
+from std_msgs.msg import Int32
+
+# CONSTANTES
+FORMAS = {0: 'circulo', 1: 'triangulo', 2: 'hexagono'}
+TOTAL_FIGURAS = 3
 
 
 class NodeIntegracao(Node):
     def __init__(self):
-        super(). __init__("node_integracao")
+        super().__init__("integracao")
+
+        self.figuras = []
+        self.finalizado = False
 
         self.create_subscription(Int32, '/deteccao', self.callback_deteccao, 10) #visao deve publicar a figura que enxerga, coloquei int mas vai depender do que a visao publicar
-        self.pub_sequencia = self.create_publisher(String, '/sequencia_sons', 10) #publica a sequencia de sons
         self.get_logger().info('Nó de integração iniciado')
 
     def callback_deteccao(self, msg):
-        # por enquanto deixei com pass até implementar
-        pass
+        if self.finalizado:
+            return
+        forma = msg.data
+        self.adicionar_figura(forma)
+        if self.completo():
+            self.finalizado = True
+            self.executar_sequencia()
+
+    def adicionar_figura (self, forma):
+        if forma not in FORMAS:
+            self.get_logger().warn("Forma não identificada")
+            return False
+        
+        if forma in self.figuras:
+            self.get_logger().warn("Forma já existente")
+            return False
+
+        self.figuras.append(forma)
+        self.get_logger().info("Forma adicionada com sucesso")
+        return True
+
+    def completo(self):
+        if len(self.figuras) == TOTAL_FIGURAS:
+            return True
+        
+        return False
 
     def executar_sequencia(self):
-        # tocar o áudio de cada classe, na ordem de `sequencia`
-        # publicar em self.pub_sequencia informando a sequencia de sons
+        # parte B
         pass
 
 

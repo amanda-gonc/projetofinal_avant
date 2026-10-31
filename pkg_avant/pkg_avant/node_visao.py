@@ -14,12 +14,17 @@ import math
 from ultralytics import YOLO
 
 # =========== CODIGOS DA REDE NEURAL ==============
-# o resultado da rede vem em forma de vetor, para cada classe há um número associado
+# a rede devolve um array com as figuras detectadas em cada frame
+# cada forma geométrica é associada a um número
 
-# Circulo Azul = 0
-# Triângulo vermelho = 1
-# Hexagono verde = 2
+# Circulo = 0
+# Triângulo = 1
+# Hexagono = 2
 # Base de pouso = 3
+
+# IMPORTANTE: Para testar a rede neural na simulação é necessário adicionar a pasta models no pkg_avant do container de voces, é la que a rede fica 
+
+# =================================================
 
 
 class TraineeVisionNode(Node):
@@ -63,18 +68,19 @@ class TraineeVisionNode(Node):
         self.get_logger().info('Inscrição ativa, recebendo imagem da camera')
 
 
-    def read_im(self, img_cv : Image):
-        img_cv = self.bridge.imgmsg_to_cv2(img_cv, desired_encoding='bgr8')
+    def read_im(self, img_cam : Image):
+        img_cam = self.bridge.imgmsg_to_cv2(img_cam, desired_encoding='bgr8')
         if self.USE_NEURAL_NETWORK:
-            self.geometrics(img_cv)
+            self.geometrics(img_cam)
         else:
-            self.classic_vision(img_cv)
-        cv.imshow('img_cv', img_cv)
+            self.classic_vision(img_cam)
+        cv.imshow('img_cam', img_cam)
         cv.waitKey(1)
 
     def geometrics(self, img):
-        resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False) 
+        resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False) # A variavel resultado recebe a resposta da rede para o frame atual
         figuras = resultado[0].boxes 
+        # figuras recebe a lista de figuras detectadas no frame
 
         for figura in figuras: 
             classe = int(figura.cls)
