@@ -26,7 +26,6 @@ setup(
         'console_scripts': [
             'visao = pkg_avant.node_visao:main',
             'integracao = pkg_avant.node_integracao:main'
-            'navegacao = pkg_avant.node_navegacao:main',
         ],
     },
 )
