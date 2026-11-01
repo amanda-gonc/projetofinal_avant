@@ -4,13 +4,6 @@ import cv2 as cv
 import numpy as np
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import Twist
-from rclpy.qos import qos_profile_sensor_data
-from rcl_interfaces.msg import ParameterType
-from mavros_msgs.srv import CommandBool, SetMode, CommandTOL, CommandLong
-from geometry_msgs.msg import PoseStamped
-import time
-import math
 from ultralytics import YOLO
 
 # =========== CODIGOS DA REDE NEURAL ==============
@@ -61,15 +54,35 @@ class TraineeVisionNode(Node):
                                                        topic='/camera/image_raw',
                                                        callback=self.read_im,
                                                        qos_profile=10)
+        
+        self.camera_info_subscriber = self.create_subscription(msg_type=CameraInfo,
+                                                               topic='/camera/camera_info',
+                                                               callback=self._camera_info_callback,
+                                                               qos_profile=10)
 
         self.bridge = CvBridge()
+        self.camera_matrix = None
+        self.distortion_coeffs = None
 
         self.modelo = YOLO('/home/avant/simulation/starts/avant_ws/src/pkg_avant/models/formas-v2.pt')
         self.get_logger().info('Inscrição ativa, recebendo imagem da camera')
 
 
-    def read_im(self, img_cam : Image):
-        img_cam = self.bridge.imgmsg_to_cv2(img_cam, desired_encoding='bgr8')
+    def _camera_info_callback(self, msg):
+        self.camera_matrix = np.array(msg.k).reshape(3, 3)
+        self.distortion_coeffs = np.array(msg.d)
+
+
+    def read_im(self, img_raw : Image):
+        img_raw = self.bridge.imgmsg_to_cv2(img_raw, desired_encoding='bgr8')
+
+        # Se a matriz da câmera e os coeficientes de distorção estiverem disponíveis, aplique a correção de distorção
+        if self.camera_matrix is not None and self.distortion_coeffs is not None:
+            img_cam = cv.undistort(img_raw, self.camera_matrix, self.distortion_coeffs)
+        else:
+            img_cam = img_raw
+
+        # Realiza a detecção de formas geométricas usando a rede neural ou visão clássica, dependendo da configuração
         if self.USE_NEURAL_NETWORK:
             self.geometrics(img_cam)
         else:
