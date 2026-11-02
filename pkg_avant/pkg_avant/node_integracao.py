@@ -43,7 +43,7 @@ class NodeIntegracao(Node):
         formas = msg.data.split()
 
         for forma in formas:
-            if not self.aciocionar_figura(forma):
+            if not self.adicionar_figura(forma):
                 continue
 
         if self.completo():
