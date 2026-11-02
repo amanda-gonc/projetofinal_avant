@@ -1,3 +1,6 @@
+import os
+from glob import glob
+
 from setuptools import find_packages, setup
 
 package_name = 'pkg_avant'
@@ -6,11 +9,20 @@ setup(
     name=package_name,
     version='0.0.0',
     packages=find_packages(exclude=['test']),
+
     data_files=[
-        ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
+        ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.xml')),
     ],
+
+
+    #data_files=[
+     #   ('share/ament_index/resource_index/packages',
+     #       ['resource/' + package_name]),
+     #   ('share/' + package_name, ['package.xml']),
+    #], 
+
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='avant',
@@ -25,7 +37,8 @@ setup(
     entry_points={
         'console_scripts': [
             'visao = pkg_avant.node_visao:main',
-            'integracao = pkg_avant.node_integracao:main'
+            'integracao = pkg_avant.node_integracao:main',
+            'navegacao = pkg_avant.node_navegacao:main'
         ],
     },
 )
