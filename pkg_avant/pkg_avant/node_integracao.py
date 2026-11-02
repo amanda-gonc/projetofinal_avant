@@ -19,9 +19,9 @@ ORDEM_CRESCENTE = True
 
 # CONFIRMAR qual som corresponde a qual forma (arquivos em sounds/).
 SONS = {
-    'circulo': 'circulo.mp3',
-    'triangulo': 'triangulo.mp3',
-    'hexagono': 'hexagono.mp3',
+    'circulo': 'sounds/circulo.mp3',
+    'triangulo': 'sounds/triangulo.mp3',
+    'hexagono': 'sounds/hexagono.mp3',
 }
 
 
@@ -32,7 +32,7 @@ class NodeIntegracao(Node):
         self.figuras = {}  # forma -> valor RGB (int)
         self.finalizado = False
 
-        self.create_subscription(String, '/detected_shapes', self.callback_deteccao, 10)
+        self.create_subscription(String, '/detected_colors', self.callback_deteccao, 10)
 
         # transient_local: quem se inscrever depois ainda recebe a sequência
         qos = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)
