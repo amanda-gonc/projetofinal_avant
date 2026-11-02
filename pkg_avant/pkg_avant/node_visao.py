@@ -101,6 +101,7 @@ class TraineeVisionNode(Node):
             self.publisher_shapes.publish(detected_shapes_msg)
             self.get_logger().info(f"Formas detectadas publicadas: {detected_shapes_msg.data}")
 
+
     def _camera_info_callback(self, msg):
         self.camera_matrix = np.array(msg.k).reshape(3, 3)
         self.distortion_coeffs = np.array(msg.d)
@@ -232,6 +233,7 @@ class TraineeVisionNode(Node):
                         self.found_shapes[shape] = [color_name, avg_color]
                         self.get_logger().info(f"{shape.capitalize()} {color_name} detectado por visão clássica! HEX = {format(avg_color, '06x')} ({avg_color})")
 
+
     def mission_status_callback(self,  msg : String):
         self.mission_status = msg.data
         
@@ -248,6 +250,7 @@ def main(args=None):
         node.destroy_node()
         rclpy.shutdown()
 
+
+
 if __name__ == '__main__':
     main()
-
