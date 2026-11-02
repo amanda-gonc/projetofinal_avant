@@ -40,17 +40,19 @@ class NodeIntegracao(Node):
         if self.finalizado:
             return
 
-        forma = msg.data.strip().lower()
+        formas = msg.data.replace(',',' ').split()
 
-        if not self.adicionar_figura(forma):
-            return
-
+        for forma in formas:
+            if not self.aciocionar_figura(forma):
+                continue
 
         if self.completo():
             self.finalizado = True
             self.executar_sequencia()
 
     def adicionar_figura(self, forma):
+        forma = forma.strip()
+
         if forma not in FORMAS:
             self.get_logger().warn(f'Forma não identificada: {forma}')
             return False
@@ -67,6 +69,8 @@ class NodeIntegracao(Node):
         return len(self.figuras) == TOTAL_FIGURAS
 
     def executar_sequencia(self):
+        self.get_logger().info('AS TRÊS FIGURAS FORAM RECEBIDAS!')
+
         ordem = sorted(
             self.figuras,
             key=self.figuras.get,
