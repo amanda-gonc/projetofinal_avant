@@ -21,7 +21,6 @@ from ultralytics import YOLO
 
 
 class TraineeVisionNode(Node):
-
     def __init__(self):
         # ---- DEFINIÇÃO DE CORES EM HSV ----
         # ---- VERMELHO (usa duas faixas por causa do wrap-around do Hue) ----
@@ -48,7 +47,8 @@ class TraineeVisionNode(Node):
 
         super().__init__('trainee_vision_node')
 
-        self.USE_NEURAL_NETWORK = False  # Defina como True para usar a rede neural, False para visão clássica
+        self.USE_NEURAL_NETWORK = True  # Defina como True para usar a rede neural, False para visão clássica
+        self.MIN_CONF_NETWORK = 0.95 # Valor minimo de confiança que a rede deve ter para ser utilizada  
 
         self.subscriber_cam = self.create_subscription(msg_type=Image,
                                                        topic='/camera/image_raw',
@@ -64,6 +64,7 @@ class TraineeVisionNode(Node):
         self.camera_matrix = None
         self.distortion_coeffs = None
 
+        self.call_classic = True 
         self.modelo = YOLO('/home/avant/simulation/starts/avant_ws/src/pkg_avant/models/formas-v2.pt')
         self.get_logger().info('Inscrição ativa, recebendo imagem da camera')
 
@@ -85,18 +86,29 @@ class TraineeVisionNode(Node):
         # Realiza a detecção de formas geométricas usando a rede neural ou visão clássica, dependendo da configuração
         if self.USE_NEURAL_NETWORK:
             self.geometrics(img_cam)
-        else:
+        if not self.USE_NEURAL_NETWORK or self.call_classic:
             self.classic_vision(img_cam)
+
         cv.imshow('img_cam', img_cam)
         cv.waitKey(1)
 
+
     def geometrics(self, img):
-        resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False) # A variavel resultado recebe a resposta da rede para o frame atual
-        figuras = resultado[0].boxes 
+        # A variavel resultado recebe a resposta da rede para o frame atual
+        resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False)
         # figuras recebe a lista de figuras detectadas no frame
+        figuras = resultado[0].boxes 
+        # O atributo decide se o método de visão clássica é necessário para determinado frame 
+        self.call_classic = False 
 
         for figura in figuras: 
             classe = int(figura.cls)
+            conf = float(figura.conf)
+
+            if conf < self.MIN_CONF_NETWORK:
+                self.call_classic = True
+                continue 
+
             # Obtendo as coordenadas do retângulo delimitador da figura e convertendo para inteiros:
             x1, y1, x2, y2 = figura.xyxy[0].tolist()
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
@@ -126,19 +138,18 @@ class TraineeVisionNode(Node):
                 pixels_rgb = img_crop_rgb[mask > 0]
                 avg_color = np.median(pixels_rgb, axis=0) if len(pixels_rgb) > 0 else np.array([0, 0, 0])
 
-                cv.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv.imshow('img_crop_rgb', img_crop_bgr)
+                cv.imshow('img_crop', img_crop_bgr)
                 cv.waitKey(1)
 
                 if classe == 0 and 'círculo' not in self.found_shapes:
                     self.found_shapes['círculo'] = ['azul', avg_color]
-                    self.get_logger().info(F"Circulo azul Avistado! HEX = {avg_color}")
+                    self.get_logger().info(F"Circulo azul detectado pela Rede Neural! HEX = {avg_color}")
                 elif classe == 1 and 'triângulo' not in self.found_shapes:
                     self.found_shapes['triângulo'] = ['vermelho', avg_color]
-                    self.get_logger().info(F"Triângulo vermelho Avistado! HEX = {avg_color}")
+                    self.get_logger().info(F"Triângulo vermelho detectado pela Rede Neural! HEX = {avg_color}")
                 elif classe == 2 and 'hexágono' not in self.found_shapes:
                     self.found_shapes['hexágono'] = ['verde', avg_color]
-                    self.get_logger().info(F"Hexagono verde Avistado! HEX = {avg_color}")
+                    self.get_logger().info(F"Hexagono verde detectado pela Rede Neural! HEX = {avg_color}")
 
 
     def classic_vision(self, img):
@@ -185,8 +196,7 @@ class TraineeVisionNode(Node):
                     # Verifica se a forma já foi detectada antes
                     if shape not in self.found_shapes and shape != "unidentified":
                         self.found_shapes[shape] = [color_name, avg_color]
-                        self.get_logger().info(f"{shape.capitalize()} {color_name} detectado! HEX = {avg_color}")
-
+                        self.get_logger().info(f"{shape.capitalize()} {color_name} detectado por visão clássica! HEX = {avg_color}")
 
 
 def main(args=None):
