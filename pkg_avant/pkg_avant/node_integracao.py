@@ -1,8 +1,6 @@
 import os
 import subprocess
-
 import rclpy
-from ament_index_python.packages import get_package_share_directory
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import String
@@ -15,9 +13,9 @@ ORDEM_CRESCENTE = True
 
 # CONFIRMAR qual som corresponde a qual forma (arquivos em sounds/).
 SONS = {
-    'círculo': 'circulo.mp3',
-    'triângulo': 'triangulo.mp3',
-    'hexágono': 'hexagono.mp3',
+    'círculo': '/home/avant/simulation/starts/avant_ws/src/pkg_avant/pkg_avant/sounds/circulo.mp3',
+    'triângulo': '/home/avant/simulation/starts/avant_ws/src/pkg_avant/pkg_avant/sounds/triangulo.mp3',
+    'hexágono': '/home/avant/simulation/starts/avant_ws/src/pkg_avant/pkg_avant/sounds/hexagono.mp3',
 }
 
 
@@ -86,13 +84,11 @@ class NodeIntegracao(Node):
         self.get_logger().info(f'Sequência publicada: {msg.data}')
 
     def tocar_som(self, forma):
-        pasta = os.path.join(get_package_share_directory('pkg_avant'), 'sounds')
-        caminho = os.path.join(pasta, SONS[forma])
-        self.get_logger().info(f'Tocando {SONS[forma]} ({forma})')
+        self.get_logger().info(f'Tocando {SONS[forma].split("/")[-1]} ({forma})')
         try:
-            subprocess.run(['mpg123', '-q', caminho], check=True)
+            subprocess.run(f'ffmpeg -loglevel quiet -i {SONS[forma]} -f wav - | paplay', check=True, shell=True)
         except (FileNotFoundError, subprocess.CalledProcessError) as erro:
-            self.get_logger().error(f'Falha ao tocar {caminho}: {erro}')
+            self.get_logger().error(f'Falha ao tocar {SONS[forma].split("/")[-1]}: {erro}')
 
 
 def main(args=None):
