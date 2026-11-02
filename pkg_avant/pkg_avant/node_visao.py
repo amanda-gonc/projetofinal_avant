@@ -63,7 +63,7 @@ class TraineeVisionNode(Node):
 
         # Publisher para publicar as formas detectadas
         self.publisher_shapes = self.create_publisher(msg_type=String,
-                                                      topic='/detected_shapes',
+                                                      topic='/detected_colors',
                                                       qos_profile=10)
         
         # Timer para publicar as formas detectadas a cada 1 segundo
@@ -75,9 +75,8 @@ class TraineeVisionNode(Node):
                                                           callback=self.mission_status_callback,
                                                           qos_profile=10)
         
-        self.MISSION_STATUS = None
+        self.mission_status = None
 
-        self.mission_status = ""
         self.bridge = CvBridge()
         self.camera_matrix = None
         self.distortion_coeffs = None
@@ -88,7 +87,7 @@ class TraineeVisionNode(Node):
 
 
     def publish_detected_shapes(self):
-        if self.mission_status == 'LAND':
+        if self.mission_status == 'POUSO':
             # Guarda os nomes das cores e seus valores hexadecimais em uma lista e ordena pelo valor hexadecimal
             sorted_shapes = [(color, hex) for color, hex in self.found_shapes.items()]
             sorted_shapes.sort(key=lambda x: x[1])
@@ -97,7 +96,7 @@ class TraineeVisionNode(Node):
             detected_shapes_msg = String()
             detected_shapes_msg.data = f'{sorted_shapes[0][0]} {sorted_shapes[1][0]} {sorted_shapes[2][0]}'
             self.publisher_shapes.publish(detected_shapes_msg)
-            self.get_logger().info(f"Formas detectadas publicadas: {self.found_shapes}")
+            self.get_logger().info(f"Formas detectadas publicadas: {detected_shapes_msg.data}")
 
     def _camera_info_callback(self, msg):
         self.camera_matrix = np.array(msg.k).reshape(3, 3)
@@ -231,7 +230,7 @@ class TraineeVisionNode(Node):
                         self.get_logger().info(f"{shape.capitalize()} {color_name} detectado por visão clássica! HEX = {avg_color}")
 
     def mission_status_callback(self,  msg : String):
-        self.MISSION_STATUS = msg.data
+        self.mission_status = msg.data
         
 
 def main(args=None):

@@ -34,7 +34,7 @@ class NodeIntegracao(Node):
 
         # Contrato com o nó de visão: String com JSON, ex.:
         # {"forma": "triangulo", "cor": "#FF0000"}
-        self.create_subscription(String, '/deteccao', self.callback_deteccao, 10)
+        self.create_subscription(String, '/detected_colors', self.callback_deteccao, 10)
 
         # transient_local: quem se inscrever depois ainda recebe a sequência
         qos = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)

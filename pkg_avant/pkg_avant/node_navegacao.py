@@ -35,7 +35,7 @@ class NavegacaoNode(Node):
         self.get_pos = self.create_subscription(PoseStamped, 'mavros/local_position/pose', self.pos_cb, qos_profile_sensor_data)
 
         # Publica o estado do drone para os outros nós (visão, integração) lerem.
-        self.estado_pub = self.create_publisher(String, '/avant/estado', 10)
+        self.estado_pub = self.create_publisher(String, '/mission_status', 10)
 
         self.arming_client = self.create_client(CommandBool, '/mavros/cmd/arming')
         self.set_mode_client = self.create_client(SetMode, '/mavros/set_mode')
