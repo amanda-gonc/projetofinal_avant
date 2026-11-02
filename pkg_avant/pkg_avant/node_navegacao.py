@@ -12,6 +12,7 @@ from sensor_msgs.msg import Image, CameraInfo
 from rcl_interfaces.msg import ParameterType
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
+from std_msgs.msg import String
 from mavros_msgs.srv import CommandBool, SetMode, CommandTOL, CommandLong
 
 from ultralytics import YOLO
@@ -32,6 +33,9 @@ class NavegacaoNode(Node):
         super().__init__('navegacao_node')
         self.set_pos = self.create_publisher(PoseStamped, '/mavros/setpoint_position/local', 10)
         self.get_pos = self.create_subscription(PoseStamped, 'mavros/local_position/pose', self.pos_cb, qos_profile_sensor_data)
+
+        # Publica o estado do drone para os outros nós (visão, integração) lerem.
+        self.estado_pub = self.create_publisher(String, '/avant/estado', 10)
 
         self.arming_client = self.create_client(CommandBool, '/mavros/cmd/arming')
         self.set_mode_client = self.create_client(SetMode, '/mavros/set_mode')
@@ -139,11 +143,14 @@ class NavegacaoNode(Node):
         return velocidade
 
     def run_mission(self):
-        # Se alguém digitou "l" ou "r", vai direto para o pouso, não importa o estado.
+        # Se alguém digitou "l" ou "r", vai direto para o pouso, não importa o estado
         if self.emergencia and self.estado != "POUSO":
             self.get_logger().warn(f"EMERGÊNCIA! Modo {self.emergencia} acionado.")
             self.modo_pouso = self.emergencia
             self.estado = "POUSO"
+
+        # a cada ciclo manda o estado no topico (para visao)
+        self.estado_pub.publish(String(data=self.estado))
 
         if self.estado == "INICIO":
             if self.set_mode_client.service_is_ready() and self.arming_client.service_is_ready():
