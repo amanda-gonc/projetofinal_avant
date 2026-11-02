@@ -76,6 +76,7 @@ class TraineeVisionNode(Node):
                                                           qos_profile=10)
         
 
+        self.mission_status = ""
         self.bridge = CvBridge()
         self.camera_matrix = None
         self.distortion_coeffs = None
@@ -84,6 +85,18 @@ class TraineeVisionNode(Node):
         self.modelo = YOLO('/home/avant/simulation/starts/avant_ws/src/pkg_avant/models/formas-v2.pt')
         self.get_logger().info('Inscrição ativa, recebendo imagem da camera')
 
+
+    def publish_detected_shapes(self):
+        if self.mission_status == 'LAND':
+            # Guarda os nomes das cores e seus valores hexadecimais em uma lista e ordena pelo valor hexadecimal
+            sorted_shapes = [(color, hex) for color, hex in self.found_shapes.items()]
+            sorted_shapes.sort(key=lambda x: x[1])
+            # Publica as formas detectadas no tópico /detected_shapes
+            self.get_logger().info("Missão finalizada, publicando formas detectadas...")
+            detected_shapes_msg = String()
+            detected_shapes_msg.data = f'{sorted_shapes[0][0]} {sorted_shapes[1][0]} {sorted_shapes[2][0]}'
+            self.publisher_shapes.publish(detected_shapes_msg)
+            self.get_logger().info(f"Formas detectadas publicadas: {self.found_shapes}")
 
     def _camera_info_callback(self, msg):
         self.camera_matrix = np.array(msg.k).reshape(3, 3)
@@ -153,6 +166,7 @@ class TraineeVisionNode(Node):
                         mask += cv.inRange(img_crop_hsv, lower_np, upper_np)
                 pixels_rgb = img_crop_rgb[mask > 0]
                 avg_color = np.median(pixels_rgb, axis=0) if len(pixels_rgb) > 0 else np.array([0, 0, 0])
+                avg_color = int(avg_color[0]) << 16 | int(avg_color[1]) << 8 | int(avg_color[2])
 
                 cv.imshow('img_crop', img_crop_bgr)
                 cv.waitKey(1)
@@ -195,6 +209,7 @@ class TraineeVisionNode(Node):
                     img_crop_rgb = cv.cvtColor(img_crop_bgr, cv.COLOR_BGR2RGB)
                     pixels_rgb = img_crop_rgb[sub_mask > 0]
                     avg_color = np.median(pixels_rgb, axis=0) if len(pixels_rgb) > 0 else np.array([0, 0, 0])
+                    avg_color = int(avg_color[0]) << 16 | int(avg_color[1]) << 8 | int(avg_color[2])
 
                     # Desenha o retângulo ao redor da forma detectada
                     cv.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
