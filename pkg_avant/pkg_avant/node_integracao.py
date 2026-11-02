@@ -40,7 +40,7 @@ class NodeIntegracao(Node):
         if self.finalizado:
             return
 
-        formas = msg.data.replace(',',' ').split()
+        formas = msg.data.split()
 
         for forma in formas:
             if not self.aciocionar_figura(forma):
