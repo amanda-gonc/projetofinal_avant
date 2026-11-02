@@ -1,4 +1,4 @@
-import json
+#import json
 import os
 import subprocess
 
@@ -32,9 +32,7 @@ class NodeIntegracao(Node):
         self.figuras = {}  # forma -> valor RGB (int)
         self.finalizado = False
 
-        # Contrato com o nó de visão: String com JSON, ex.:
-        # {"forma": "triangulo", "cor": "#FF0000"}
-        self.create_subscription(String, '/detected_colors', self.callback_deteccao, 10)
+        self.create_subscription(String, '/detected_shapes', self.callback_deteccao, 10)
 
         # transient_local: quem se inscrever depois ainda recebe a sequência
         qos = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)
@@ -46,22 +44,17 @@ class NodeIntegracao(Node):
         if self.finalizado:
             return
 
-        try:
-            dado = json.loads(msg.data)
-            forma = dado['forma']
-            cor = int(dado['cor'].lstrip('#'), 16)
-        except (ValueError, KeyError, AttributeError):
-            self.get_logger().warn(f'Mensagem de detecção inválida: {msg.data}')
+        forma = msg.data.strip().lower()
+
+        if not self.adicionar_figura(forma):
             return
 
-        if not self.adicionar_figura(forma, cor):
-            return
 
         if self.completo():
             self.finalizado = True
             self.executar_sequencia()
 
-    def adicionar_figura(self, forma, cor):
+    def adicionar_figura(self, forma):
         if forma not in FORMAS:
             self.get_logger().warn(f'Forma não identificada: {forma}')
             return False
@@ -69,8 +62,9 @@ class NodeIntegracao(Node):
         if forma in self.figuras:
             return False  # já registrada, não polui o log a cada frame
 
-        self.figuras[forma] = cor
-        self.get_logger().info(f'Figura registrada: {forma} #{cor:06X}')
+        self.figuras[forma] = len(self.figuras)
+
+        self.get_logger().info(f'Figura registrada: {forma}')
         return True
 
     def completo(self):
