@@ -1,4 +1,3 @@
-import os
 import subprocess
 import rclpy
 from rclpy.node import Node
@@ -23,7 +22,7 @@ class NodeIntegracao(Node):
     def __init__(self):
         super().__init__('integracao')
 
-        self.figuras = {}  # forma -> valor RGB (int)
+        self.figuras = {} 
         self.finalizado = False
 
         self.create_subscription(String, '/detected_shapes', self.callback_deteccao, 10)
