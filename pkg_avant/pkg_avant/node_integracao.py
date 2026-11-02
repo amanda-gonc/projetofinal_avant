@@ -19,9 +19,9 @@ ORDEM_CRESCENTE = True
 
 # CONFIRMAR qual som corresponde a qual forma (arquivos em sounds/).
 SONS = {
-    'circulo': 'som1.mp3',
-    'triangulo': 'som2.mp3',
-    'hexagono': 'som3.mp3',
+    'circulo': 'circulo.mp3',
+    'triangulo': 'triangulo.mp3',
+    'hexagono': 'hexagono.mp3',
 }
 
 
@@ -34,7 +34,7 @@ class NodeIntegracao(Node):
 
         # Contrato com o nó de visão: String com JSON, ex.:
         # {"forma": "triangulo", "cor": "#FF0000"}
-        self.create_subscription(String, '/deteccao', self.callback_deteccao, 10)
+        self.create_subscription(String, '/detected_shapes', self.callback_deteccao, 10)
 
         # transient_local: quem se inscrever depois ainda recebe a sequência
         qos = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)
