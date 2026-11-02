@@ -83,21 +83,16 @@ Antes de clonar e executar o projeto, certifique-se de ter os seguintes componen
 
 1. **Clone o repositório:**
    ```bash
-   git clone https://github.com/sua-organizacao/projeto-trainee-eletronica-g3.git
-   cd projeto-trainee-eletronica-g3
+   git clone git@github.com:amanda-gonc/projetofinal_avant.git
+   cd projetofinal_avant
    ```
 
-2. **Configure o ambiente de trabalho (Workspace):**
-   ```bash
-   source /opt/ros/humble/setup.bash
-   colcon build --symlink-install
-   source install/setup.bash
+2. ** Terminar depois **
+   ```
    ```
 
-3. **Execute a simulação:**
-   ```bash
-   # Exemplo de comando launch (ajuste conforme a estrutura do pacote)
-   ros2 launch nome_do_pacote launch_projeto.launch.py
+3. **xdd**
+   ```
    ```
 
 ---
