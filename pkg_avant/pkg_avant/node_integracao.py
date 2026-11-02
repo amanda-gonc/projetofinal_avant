@@ -15,15 +15,9 @@ ORDEM_CRESCENTE = True
 
 # CONFIRMAR qual som corresponde a qual forma (arquivos em sounds/).
 SONS = {
-<<<<<<< HEAD
-    'circulo': 'sounds/circulo.mp3',
-    'triangulo': 'sounds/triangulo.mp3',
-    'hexagono': 'sounds/hexagono.mp3',
-=======
     'círculo': 'circulo.mp3',
     'triângulo': 'triangulo.mp3',
     'hexágono': 'hexagono.mp3',
->>>>>>> b52ba5937f7eee105bf32f13b629ef79c53f043b
 }
 
 
