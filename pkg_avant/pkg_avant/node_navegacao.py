@@ -1,21 +1,11 @@
 import math
 import threading
-import time
-
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
-import cv2 as cv
-import numpy as np
-from cv_bridge import CvBridge
-from sensor_msgs.msg import Image, CameraInfo
-from rcl_interfaces.msg import ParameterType
 from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from mavros_msgs.srv import CommandBool, SetMode, CommandTOL, CommandLong
-
-from ultralytics import YOLO
 
 
 # macros gerais 
