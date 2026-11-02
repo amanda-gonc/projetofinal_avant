@@ -1,4 +1,3 @@
-#import json
 import os
 import subprocess
 
@@ -9,19 +8,16 @@ from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import String
 
 # CONSTANTES
-FORMAS = ('circulo', 'triangulo', 'hexagono')
+FORMAS = ('círculo', 'triângulo', 'hexágono')
 TOTAL_FIGURAS = 3
 
-# ATENCAO: o enunciado diz "sequencia crescente de valores em hexadecimal",
-# mas o exemplo (vermelho -> verde -> azul = FF0000 -> 00FF00 -> 0000FF) e
-# DECRESCENTE em valor numerico. Confirmar com os monitores e ajustar aqui.
 ORDEM_CRESCENTE = True
 
 # CONFIRMAR qual som corresponde a qual forma (arquivos em sounds/).
 SONS = {
-    'circulo': 'circulo.mp3',
-    'triangulo': 'triangulo.mp3',
-    'hexagono': 'hexagono.mp3',
+    'círculo': 'circulo.mp3',
+    'triângulo': 'triangulo.mp3',
+    'hexágono': 'hexagono.mp3',
 }
 
 
