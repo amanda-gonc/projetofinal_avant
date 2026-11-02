@@ -71,7 +71,7 @@ class TraineeVisionNode(Node):
 
         # Subscriber para saber o estado da missão (se o drone pousou ou não)
         self.status_subscriber = self.create_subscription(msg_type=String,
-                                                          topic='/avant/estado',
+                                                          topic='/mission_status',
                                                           callback=self.mission_status_callback,
                                                           qos_profile=10)
         
