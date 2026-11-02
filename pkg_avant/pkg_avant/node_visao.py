@@ -75,6 +75,7 @@ class TraineeVisionNode(Node):
                                                           callback=self.mission_status_callback,
                                                           qos_profile=10)
         
+        self.MISSION_STATUS = None
 
         self.bridge = CvBridge()
         self.camera_matrix = None
@@ -215,10 +216,7 @@ class TraineeVisionNode(Node):
                         self.get_logger().info(f"{shape.capitalize()} {color_name} detectado por visão clássica! HEX = {avg_color}")
 
     def mission_status_callback(self,  msg : String):
-        if msg.data != 'POUSO':
-            return
-        # quando a msg for POUSO o método de enviar a sequência é chamado
-        pass
+        self.MISSION_STATUS = msg.data
         
 
 def main(args=None):
