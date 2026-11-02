@@ -81,13 +81,16 @@ class TraineeVisionNode(Node):
         self.camera_matrix = None
         self.distortion_coeffs = None
 
+        self.colors_sent = False  # Flag para indicar se as cores já foram enviadas
+
         self.call_classic = True 
         self.modelo = YOLO('/home/avant/simulation/starts/avant_ws/src/pkg_avant/models/formas-v2.pt')
         self.get_logger().info('Inscrição ativa, recebendo imagem da camera')
 
 
     def publish_detected_shapes(self):
-        if self.mission_status == 'POUSO':
+        if self.mission_status == 'POUSO' and self.colors_sent == False:
+            self.colors_sent = True
             # Guarda os nomes das cores e seus valores hexadecimais em uma lista e ordena pelo valor hexadecimal
             sorted_shapes = [(color, hex) for color, hex in self.found_shapes.items()]
             sorted_shapes.sort(key=lambda x: x[1])
