@@ -4,6 +4,7 @@ import cv2 as cv
 import numpy as np
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image, CameraInfo
+from std_msgs.msg import String
 from ultralytics import YOLO
 
 # =========== CODIGOS DA REDE NEURAL ==============
@@ -59,6 +60,21 @@ class TraineeVisionNode(Node):
                                                                topic='/camera/camera_info',
                                                                callback=self._camera_info_callback,
                                                                qos_profile=10)
+
+        # Publisher para publicar as formas detectadas
+        self.publisher_shapes = self.create_publisher(msg_type=String,
+                                                      topic='/detected_shapes',
+                                                      qos_profile=10)
+        
+        # Timer para publicar as formas detectadas a cada 1 segundo
+        self.timer = self.create_timer(1.0, self.publish_detected_shapes)
+
+        # Subscriber para saber o estado da missão (se o drone pousou ou não)
+        self.status_subscriber = self.create_subscription(msg_type=String,
+                                                          topic='/mission_status',
+                                                          callback=self.mission_status_callback,
+                                                          qos_profile=10)
+        
 
         self.bridge = CvBridge()
         self.camera_matrix = None
