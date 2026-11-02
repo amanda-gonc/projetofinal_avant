@@ -75,6 +75,7 @@ class TraineeVisionNode(Node):
                                                           callback=self.mission_status_callback,
                                                           qos_profile=10)
         
+        self.MISSION_STATUS = None
 
         self.mission_status = ""
         self.bridge = CvBridge()
@@ -229,6 +230,9 @@ class TraineeVisionNode(Node):
                         self.found_shapes[shape] = [color_name, avg_color]
                         self.get_logger().info(f"{shape.capitalize()} {color_name} detectado por visão clássica! HEX = {avg_color}")
 
+    def mission_status_callback(self,  msg : String):
+        self.MISSION_STATUS = msg.data
+        
 
 def main(args=None):
     rclpy.init(args=args)
