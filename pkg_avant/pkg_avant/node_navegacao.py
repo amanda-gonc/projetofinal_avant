@@ -198,7 +198,7 @@ class NavegacaoNode(Node):
         elif self.estado == "POUSO":
             self.set_mode(self.modo_pouso)
             tempo = (self.get_clock().now() - self.inicio).nanoseconds / 1e9
-            self.get_logger().info(f'Modo {self.modo_pouso} enviado após {tempo:.0f} s (a descida leva uns 12 s a mais).')
+            self.get_logger().info(f'Modo {self.modo_pouso} enviado após {tempo:.0f} s')
             self.timer.cancel()
 
 
