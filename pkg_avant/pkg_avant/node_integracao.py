@@ -26,7 +26,7 @@ class NodeIntegracao(Node):
         self.figuras = {}  # forma -> valor RGB (int)
         self.finalizado = False
 
-        self.create_subscription(String, '/detected_colors', self.callback_deteccao, 10)
+        self.create_subscription(String, '/detected_shapes', self.callback_deteccao, 10)
 
         # transient_local: quem se inscrever depois ainda recebe a sequência
         qos = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)

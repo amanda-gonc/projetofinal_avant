@@ -63,7 +63,7 @@ class TraineeVisionNode(Node):
 
         # Publisher para publicar as formas detectadas
         self.publisher_shapes = self.create_publisher(msg_type=String,
-                                                      topic='/detected_colors',
+                                                      topic='/detected_shapes',
                                                       qos_profile=10)
         
         # Timer para publicar as formas detectadas a cada 1 segundo
@@ -92,8 +92,8 @@ class TraineeVisionNode(Node):
         if self.mission_status == 'POUSO' and self.colors_sent == False:
             self.colors_sent = True
             # Guarda os nomes das cores e seus valores hexadecimais em uma lista e ordena pelo valor hexadecimal
-            sorted_shapes = [(color, hex) for color, hex in self.found_shapes.items()]
-            sorted_shapes.sort(key=lambda x: x[1])
+            sorted_shapes = [(shape, values) for shape, values in self.found_shapes.items()]
+            sorted_shapes.sort(key=lambda x: x[1][1])
             # Publica as formas detectadas no tópico /detected_shapes
             self.get_logger().info("Missão finalizada, publicando formas detectadas...")
             detected_shapes_msg = String()
@@ -176,13 +176,13 @@ class TraineeVisionNode(Node):
 
                 if classe == 0 and 'círculo' not in self.found_shapes:
                     self.found_shapes['círculo'] = ['azul', avg_color]
-                    self.get_logger().info(F"Circulo azul detectado pela Rede Neural! HEX = {avg_color}")
+                    self.get_logger().info(F"Circulo azul detectado pela Rede Neural! HEX = {format(avg_color, '06x')} ({avg_color})")
                 elif classe == 1 and 'triângulo' not in self.found_shapes:
                     self.found_shapes['triângulo'] = ['vermelho', avg_color]
-                    self.get_logger().info(F"Triângulo vermelho detectado pela Rede Neural! HEX = {avg_color}")
+                    self.get_logger().info(F"Triângulo vermelho detectado pela Rede Neural! HEX = {format(avg_color, '06x')} ({avg_color})")
                 elif classe == 2 and 'hexágono' not in self.found_shapes:
                     self.found_shapes['hexágono'] = ['verde', avg_color]
-                    self.get_logger().info(F"Hexagono verde detectado pela Rede Neural! HEX = {avg_color}")
+                    self.get_logger().info(F"Hexagono verde detectado pela Rede Neural! HEX = {format(avg_color, '06x')} ({avg_color})")
 
 
     def classic_vision(self, img):
@@ -230,7 +230,7 @@ class TraineeVisionNode(Node):
                     # Verifica se a forma já foi detectada antes
                     if shape not in self.found_shapes and shape != "unidentified":
                         self.found_shapes[shape] = [color_name, avg_color]
-                        self.get_logger().info(f"{shape.capitalize()} {color_name} detectado por visão clássica! HEX = {avg_color}")
+                        self.get_logger().info(f"{shape.capitalize()} {color_name} detectado por visão clássica! HEX = {format(avg_color, '06x')} ({avg_color})")
 
     def mission_status_callback(self,  msg : String):
         self.mission_status = msg.data
