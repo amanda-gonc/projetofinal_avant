@@ -42,20 +42,21 @@ Este repositório contém a solução desenvolvida pelo **Grupo 3** do Trainee d
 
 ## 🛠️ Arquitetura & Tecnologias
 
-A solução baseia-se na integração entre a linguagem **Python** e o ecossistema de robótica **ROS 2**.
+A solução baseia-se na integração entre a linguagem **Python** e o ecossistema de robótica **ROS 2**.A percepção do ambiente é feita por um nó de visão que combina uma rede neural (**YOLO11n**) com visão computacional clássica (**OpenCV**).
 
 ```
-                   +------------------------+
-                   |     Interface ROS 2    |
-                   |       (Nodes/Tópicos)  |
-                   +-----------+------------+
-                               |
-            +------------------+------------------+
-            |                                     |
-    +-------v-------+                     +-------v-------+
-    |   Simulação   |                     |    Controle   |
-    |   (Gazebo)    |                     |   (Scripts)   |
-    +---------------+                     +---------------+
+                     +------------------------+
+                     |     Interface ROS 2    |
+                     |    (Nodes/Tópicos)     |
+                     +-----------+------------+
+                                 |
+        +------------------------+------------------------+
+        |                        |                        |
++-------v-------+      +---------v----------+     +-------v-------+
+|   Simulação   |      |     Percepção      |     |    Controle   |
+|   (Gazebo)    |      |    (Nó de Visão)   |     |   (Scripts)   |
+|               |      |  YOLO11n + OpenCV  |     |               |
++---------------+      +--------------------+     +---------------+
 ```
 
 ### Principais Ferramentas
@@ -63,6 +64,7 @@ A solução baseia-se na integração entre a linguagem **Python** e o ecossiste
 * **Middleware:** ROS 2 (Humble Hawksbill)
 * **Simulador:** Gazebo
 * **Ambiente & Orquestração:** Docker & TMUX
+* **Visão Computacional:** OpenCV + rede neural YOLO11n (Ultralytics)
 
 ---
 
