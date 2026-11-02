@@ -214,6 +214,12 @@ class TraineeVisionNode(Node):
                         self.found_shapes[shape] = [color_name, avg_color]
                         self.get_logger().info(f"{shape.capitalize()} {color_name} detectado por visão clássica! HEX = {avg_color}")
 
+    def mission_status_callback(self,  msg : String):
+        if msg.data != 'POUSO':
+            return
+        # quando a msg for POUSO o método de enviar a sequência é chamado
+        pass
+        
 
 def main(args=None):
     rclpy.init(args=args)
