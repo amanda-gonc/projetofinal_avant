@@ -36,16 +36,7 @@ class NavegacaoNode(Node):
         self.estado = "INICIO"
 
         # Arena 14 m (x) por 8 m (y), com o centro no ponto de decolagem
-        # São 6 faixas em zigue-zague
-        self.waypoints = [
-            (-6.3, -3.3, ALTURA), (6.3, -3.3, ALTURA),    # faixa 1
-            (6.3, -1.98, ALTURA), (-6.3, -1.98, ALTURA),  # faixa 2
-            (-6.3, -0.66, ALTURA), (6.3, -0.66, ALTURA),  # faixa 3
-            (6.3, 0.66, ALTURA), (-6.3, 0.66, ALTURA),    # faixa 4
-            (-6.3, 1.98, ALTURA), (6.3, 1.98, ALTURA),    # faixa 5
-            (6.3, 3.3, ALTURA), (-6.3, 3.3, ALTURA),      # faixa 6
-            (0.0, 0.0, ALTURA),                           # volta ao centro para pousar
-        ]
+        self.waypoints = self.create_waypoints()
         self.way_index = 0
 
         self.inicio = self.get_clock().now()
@@ -68,6 +59,17 @@ class NavegacaoNode(Node):
                 self.emergencia = "LAND"
             elif tecla == 'r':
                 self.emergencia = "RTL"
+
+    def create_waypoints(self):
+        waypoints = []
+        direction = -1
+        for n in range(4):
+            y = round(-3.0 + n * 2.0, 2)
+            waypoints += [(6.0 * direction, y, ALTURA), (-6.0 * direction, y, ALTURA)]
+            direction = -direction
+        waypoints.append((0.0, 0.0, ALTURA))  # volta ao centro para pousar
+        return waypoints
+
 
     def pos_cb(self, msg):
         self.current_pos = msg
