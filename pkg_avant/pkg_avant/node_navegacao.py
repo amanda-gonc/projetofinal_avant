@@ -7,14 +7,13 @@ from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 from mavros_msgs.srv import CommandBool, SetMode, CommandTOL, CommandLong
 
-
 # macros gerais 
 ALTURA = 4.0          # altura da varredura (m)
-TEMPO_ALVO = 290.0    #tempo médio da missão, pode trocar se quiser
+TEMPO_ALVO = 290.0    # tempo médio da missão (s)
 TEMPO_POUSO = 12.0    # estimativa do tempo de descida em LAND (s)
-FOLGA_CURVAS = 10.0   # reserva para o drone desacelerar nas curvas (s)
-V_MIN = 0.25          # velocidade mínima
-V_MAX = 2.0           # velocidade máxima
+FOLGA_CURVAS = 10.0   # reserva para desaceleração nas curvas (s)
+V_MIN = 0.25          # velocidade mínima (m/s)
+V_MAX = 2.0           # velocidade máxima (m/s)
 
 
 class NavegacaoNode(Node):
@@ -24,7 +23,6 @@ class NavegacaoNode(Node):
         self.set_pos = self.create_publisher(PoseStamped, '/mavros/setpoint_position/local', 10)
         self.get_pos = self.create_subscription(PoseStamped, 'mavros/local_position/pose', self.pos_cb, qos_profile_sensor_data)
 
-        # Publica o estado do drone para os outros nós (visão, integração) lerem.
         self.estado_pub = self.create_publisher(String, '/mission_status', 10)
 
         self.arming_client = self.create_client(CommandBool, '/mavros/cmd/arming')
@@ -34,15 +32,15 @@ class NavegacaoNode(Node):
 
         self.current_pos = PoseStamped()
         self.estado = "INICIO"
+        self.future = None
 
-        # Arena 14 m (x) por 8 m (y), com o centro no ponto de decolagem
         self.waypoints = self.create_waypoints()
         self.way_index = 0
 
         self.inicio = self.get_clock().now()
         self.timer = self.create_timer(0.1, self.run_mission)
 
-        # botao de emergencia pelo teclado l para land e r para rtl
+        # teclado para emergencia
         self.emergencia = None
         self.modo_pouso = "LAND"
         self.teclado = threading.Thread(target=self.ler_teclado, daemon=True)
@@ -50,15 +48,15 @@ class NavegacaoNode(Node):
 
     def ler_teclado(self):
         self.get_logger().info('Emergência: digite "l" + Enter para LAND ou "r" + Enter para RTL.')
-        while True:
+        while rclpy.ok():
             try:
                 tecla = input().strip().lower()
+                if tecla == 'l':
+                    self.emergencia = "LAND"
+                elif tecla == 'r':
+                    self.emergencia = "RTL"
             except EOFError:
-                return
-            if tecla == 'l':
-                self.emergencia = "LAND"
-            elif tecla == 'r':
-                self.emergencia = "RTL"
+                break
 
     def create_waypoints(self):
         waypoints = []
@@ -69,7 +67,6 @@ class NavegacaoNode(Node):
             direction = -direction
         waypoints.append((0.0, 0.0, ALTURA))  # volta ao centro para pousar
         return waypoints
-
 
     def pos_cb(self, msg):
         self.current_pos = msg
@@ -91,7 +88,7 @@ class NavegacaoNode(Node):
 
     def set_speed(self, speed):
         req = CommandLong.Request()
-        req.command = 178
+        req.command = 178  # MAV_CMD_DO_CHANGE_SPEED
         req.param1 = 1.0
         req.param2 = float(speed)
         req.param3 = -1.0
@@ -100,9 +97,11 @@ class NavegacaoNode(Node):
 
     def send_waypoint(self, x, y, z):
         msg = PoseStamped()
-        msg.pose.position.x = x
-        msg.pose.position.y = y
-        msg.pose.position.z = z
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = "map"
+        msg.pose.position.x = float(x)
+        msg.pose.position.y = float(y)
+        msg.pose.position.z = float(z)
         msg.pose.orientation.w = 1.0
         self.set_pos.publish(msg)
 
@@ -116,71 +115,84 @@ class NavegacaoNode(Node):
         x = self.current_pos.pose.position.x
         y = self.current_pos.pose.position.y
         comprimento = 0.0
-        for wx, wy, wz in self.waypoints:
+        
+        # considera apenas os waypoints restantes
+        for wx, wy, _ in self.waypoints[self.way_index:]:
             comprimento += math.sqrt((wx - x)**2 + (wy - y)**2)
             x, y = wx, wy
 
-        # Tempo que sobra para a varredura = alvo - o que já passou - pouso - folga.
         gasto = (self.get_clock().now() - self.inicio).nanoseconds / 1e9
         restante = TEMPO_ALVO - gasto - TEMPO_POUSO - FOLGA_CURVAS
         velocidade = comprimento / max(restante, 1.0)
 
         if velocidade > V_MAX:
-            self.get_logger().warn(f'Precisaria de {velocidade:.2f} m/s, acima do limite. Usando {V_MAX} m/s e vai passar do tempo.')
+            self.get_logger().warn(f'Precisaria de {velocidade:.2f} m/s, acima do limite. Usando {V_MAX} m/s.')
             velocidade = V_MAX
         elif velocidade < V_MIN:
             velocidade = V_MIN
 
-        self.get_logger().info(f'Caminho de {comprimento:.0f} m, {gasto:.0f} s já gastos: velocidade {velocidade:.2f} m/s.')
+        self.get_logger().info(f'Caminho restante: {comprimento:.1f} m, {gasto:.0f} s já gastos: velocidade {velocidade:.2f} m/s.')
         return velocidade
 
     def run_mission(self):
-        # Se alguém digitou "l" ou "r", vai direto para o pouso, não importa o estado
+        # manter publicação contínua de setpoints para aceitar GUIDED
+        if self.estado in ["INICIO", "AGUARDA_GUIDED", "ARM", "AGUARDA_ARM", "TAKEOFF", "AGUARDA_TAKEOFF"]:
+            self.send_waypoint(0.0, 0.0, ALTURA)
+
+        # verificar a emergencia
         if self.emergencia and self.estado != "POUSO":
             self.get_logger().warn(f"EMERGÊNCIA! Modo {self.emergencia} acionado.")
             self.modo_pouso = self.emergencia
             self.estado = "POUSO"
 
-        # a cada ciclo manda o estado no topico (para visao)
         self.estado_pub.publish(String(data=self.estado))
 
+        # lógica dos estados
         if self.estado == "INICIO":
             if self.set_mode_client.service_is_ready() and self.arming_client.service_is_ready():
                 self.inicio = self.get_clock().now()
                 self.future = self.set_mode("GUIDED")
                 self.estado = "AGUARDA_GUIDED"
+
         elif self.estado == "AGUARDA_GUIDED":
-            if self.future.done():
+            if self.future and self.future.done():
                 self.estado = "ARM"
+
         elif self.estado == "ARM":
             self.future = self.arm()
             self.estado = "AGUARDA_ARM"
+
         elif self.estado == "AGUARDA_ARM":
-            if self.future.done():
+            if self.future and self.future.done():
                 if self.future.result().success:
                     self.estado = "TAKEOFF"
                 else:
-                    self.estado = "ARM"  # não armou, tenta de novo
+                    self.estado = "ARM"
+
         elif self.estado == "TAKEOFF":
             if self.takeoff_client.service_is_ready():
                 self.future = self.takeoff(ALTURA)
                 self.estado = "AGUARDA_TAKEOFF"
+
         elif self.estado == "AGUARDA_TAKEOFF":
-            if self.future.done() and abs(ALTURA - self.current_pos.pose.position.z) <= 0.2:
+            if abs(ALTURA - self.current_pos.pose.position.z) <= 0.3:
                 self.estado = "SPEED"
+
         elif self.estado == "SPEED":
             self.future = self.set_speed(self.calcular_velocidade())
             self.estado = "AGUARDA_SPEED"
+
         elif self.estado == "AGUARDA_SPEED":
-            if self.future.done():
+            if self.future and self.future.done():
                 self.estado = "NAVEGACAO"
+
         elif self.estado == "NAVEGACAO":
             if self.way_index < len(self.waypoints):
                 target_x, target_y, target_z = self.waypoints[self.way_index]
                 self.send_waypoint(target_x, target_y, target_z)
 
                 dist = self.distance(target_x, target_y, target_z)
-                if dist < 0.3:
+                if dist < 0.4:
                     self.get_logger().info(f"Ponto {self.way_index} alcançado, indo para o próximo.")
                     self.way_index += 1
             else:
