@@ -119,7 +119,7 @@ Projeto desenvolvido com dedicação pelos membros do Grupo 3:
 * **Gabriel Bispo**
 * **Gabriela Kethlin**
 * **Gustavo Almeida**
-* **Leandra Amorin**
+* **Leandra Amorim**
 
 ---
 

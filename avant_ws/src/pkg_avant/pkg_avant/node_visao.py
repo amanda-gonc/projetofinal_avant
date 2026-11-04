@@ -145,8 +145,13 @@ class TraineeVisionNode(Node):
     def publish_detected_shapes(self):
         """Publica as formas detectadas no tópico /detected_shapes se a missão estiver finalizada e as cores ainda não foram enviadas."""
 
-        if self.mission_status == 'POUSO' and self.colors_sent == False:
+        if self.mission_status == 'FIM' and self.colors_sent == False:
             self.colors_sent = True
+            # verifica se todas as três formas foram detectadas
+            if len(self.found_shapes) < 3:
+                self.get_logger().warn("Missão finalizada, mas nem todas as formas foram detectadas.")
+                self.publisher_shapes.publish(String(data="Nem todas as formas foram detectadas"))
+                return
             # Guarda os nomes das cores e seus valores hexadecimais em uma lista e ordena pelo valor hexadecimal
             sorted_shapes = [(shape, values) for shape, values in self.found_shapes.items()]
             sorted_shapes.sort(key=lambda x: x[1][1])
@@ -200,7 +205,7 @@ class TraineeVisionNode(Node):
 
 
     def geometrics(self, img: cv.typing.MatLike):
-        """Realiza a detecção de formas geométricas usando a rede neural YOLOv8."""
+        """Realiza a detecção de formas geométricas usando a rede neural YOLOn11."""
 
         # A variavel resultado recebe a resposta da rede para o frame atual
         resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False)
