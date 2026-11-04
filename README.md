@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="static/avant_logo.png" alt="AVANT - UFMG Flying Robots Competition Team" width="450">
+<img src="static/avant_logo.png" alt="AVANT - UFMG Flying Robots Competition Team" width="320">
 
 # 🛸 Projeto Final Trainee — Eletrônica (AVANT UFMG)
 
