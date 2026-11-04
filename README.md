@@ -91,7 +91,7 @@ Antes de clonar e executar o projeto, certifique-se de ter os seguintes componen
 
 2. **Com o contêiner em execução, copie o pacote para o workspace dentro dele:**
    ```bash
-   docker cp pkg_avant/. trainee-26:/home/avant/simulation/starts/avant_ws/src/pkg_avant/
+   docker cp avant_ws/src/pkg_avant/. trainee-26:/home/avant/simulation/starts/avant_ws/src/pkg_avant/
    ```
 
 3. **Dentro do contêiner, compile:**
