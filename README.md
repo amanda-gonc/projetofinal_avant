@@ -89,12 +89,24 @@ Antes de clonar e executar o projeto, certifique-se de ter os seguintes componen
    cd projetofinal_avant
    ```
 
-2. ** Terminar depois **
-   ```
+2. **Com o contêiner em execução, copie o pacote para o workspace dentro dele:**
+   ```bash
+   docker cp pkg_avant/. trainee-26:/home/avant/simulation/starts/avant_ws/src/pkg_avant/
    ```
 
-3. **xdd**
+3. **Dentro do contêiner, compile:**
+   ```bash
+   cd /home/avant/simulation/starts/avant_ws
+   source /opt/ros/humble/setup.bash
+   colcon build --packages-select pkg_avant
+   source install/setup.bash
    ```
+
+4. **Suba a simulação (Gazebo, ArduPilot e MAVROS) pelo procedimento dado pela Avant e aguarde tudo iniciar.**
+
+5. **Inicie o projeto, só depois de a simulação estar pronta, pois a navegação tenta armar o drone ao iniciar:**
+   ```bash
+   ros2 launch pkg_avant launch_project.launch.xml
    ```
 
 ---
@@ -105,7 +117,7 @@ Projeto desenvolvido com dedicação pelos membros do Grupo 3:
 
 * **Amanda Gonçalves**
 * **Gabriel Bispo**
-* **Gabriela**
+* **Gabriela Kethlin**
 * **Gustavo Almeida**
 * **Leandra Amorin**
 
