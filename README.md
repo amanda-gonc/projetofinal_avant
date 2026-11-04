@@ -89,7 +89,7 @@ Antes de clonar e executar o projeto, certifique-se de ter os seguintes componen
 
 1. **Clone o repositório:**
    ```bash
-   git clone git@github.com:amanda-gonc/projetofinal_avant.git
+   git clone https://github.com/amanda-gonc/projetofinal_avant.git
    cd projetofinal_avant
    ```
 
