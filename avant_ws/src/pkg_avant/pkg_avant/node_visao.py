@@ -205,7 +205,7 @@ class TraineeVisionNode(Node):
 
 
     def geometrics(self, img: cv.typing.MatLike):
-        """Realiza a detecção de formas geométricas usando a rede neural YOLOn11."""
+        """Realiza a detecção de formas geométricas usando a rede neural YOLO11n."""
 
         # A variavel resultado recebe a resposta da rede para o frame atual
         resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False)

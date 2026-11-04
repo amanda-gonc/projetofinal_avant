@@ -10,7 +10,7 @@ TOTAL_FIGURAS = 3
 
 ORDEM_CRESCENTE = True
 
-# CONFIRMAR qual som corresponde a qual forma (arquivos em sounds/).
+
 SONS = {
     'círculo': '/home/avant/simulation/starts/avant_ws/src/pkg_avant/pkg_avant/sounds/circulo.mp3',
     'triângulo': '/home/avant/simulation/starts/avant_ws/src/pkg_avant/pkg_avant/sounds/triangulo.mp3',
