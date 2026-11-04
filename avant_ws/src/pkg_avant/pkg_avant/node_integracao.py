@@ -37,6 +37,14 @@ class NodeIntegracao(Node):
         if self.finalizado:
             return
 
+        # Verifica se nem todas as formas foram detectadas
+        if msg.data == "Nem todas as formas foram detectadas":
+            self.get_logger().warning(
+                "Nem todas as formas foram detectadas. Reprodução dos áudios cancelada."
+                )   
+            self.finalizado = True
+            return
+
         formas = msg.data.split()
 
         for forma in formas:
