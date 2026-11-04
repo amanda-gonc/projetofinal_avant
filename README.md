@@ -78,7 +78,11 @@ Antes de clonar e executar o projeto, certifique-se de ter os seguintes componen
 | **Gazebo** | Ambiente de simulação 3D | [Instalação Gazebo](https://gazebosim.org/) |
 | **Docker** | Conteinerização para execução do ambiente | [Download Docker](https://docs.docker.com/get-docker/) |
 | **TMUX** | Multiplexador de terminal para gerenciar nós | `sudo apt install tmux` |
-
+| **ArduPilot SITL** e **MAVROS** | Piloto automático simulado e comandos de voo | Incluídos no contêiner |
+| **OpenCV** e **cv_bridge** | Processamento das imagens da câmera | Incluídos no contêiner |
+| **NumPy** (< 2) | Compatibilidade com o `cv_bridge` | Incluído no contêiner |
+| **Ultralytics** (8.4.40) | Execução da rede YOLO11n | Incluído no contêiner |
+| **FFmpeg** e **PulseAudio** | Conversão e reprodução dos áudios | Incluídos no contêiner |
 ---
 
 ## 🚀 Como Executar

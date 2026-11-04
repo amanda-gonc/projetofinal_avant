@@ -62,7 +62,7 @@ class NavegacaoNode(Node):
         self.espera_ciclos = 0      # pausa entre tentativas de pouso (1 ciclo = 0,1 s)
 
         # Pedidos de emergência ("LAND" ou "RTL") entram nesta fila, vindos do teclado
-        # ou do tópico /emergência
+        # ou do tópico /emergencia
         self.fila_emergencia = queue.SimpleQueue()
         self.emergencia_sub = self.create_subscription(String, '/emergencia', self.emergencia_cb, 10)
 
