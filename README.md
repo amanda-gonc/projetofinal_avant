@@ -102,9 +102,7 @@ Antes de clonar e executar o projeto, certifique-se de ter os seguintes componen
    source install/setup.bash
    ```
 
-4. **Suba a simulação (Gazebo, ArduPilot e MAVROS) pelo procedimento do grupo e aguarde tudo iniciar.**
-   ```
-   ```
+4. **Suba a simulação (Gazebo, ArduPilot e MAVROS) pelo procedimento dado pela Avant e aguarde tudo iniciar.**
 
 5. **Inicie o projeto, só depois de a simulação estar pronta, pois a navegação tenta armar o drone ao iniciar:**
    ```bash
