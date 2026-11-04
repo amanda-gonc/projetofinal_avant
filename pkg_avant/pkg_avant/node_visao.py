@@ -45,7 +45,7 @@ class TraineeVisionNode(Node):
         }
 
         # ---- CONFIGURAÇÕES DE VISÃO PARA TESTES ----
-        self.VISION_DEBUGGING = True  # Usado para simular diferentes condições de visão
+        self.VISION_DEBUGGING = False  # Usado para simular diferentes condições de visão
         # Os testes foram feitos com alpha=0.7, beta=-20 e com alpha=1.6, beta=30
         self.VISION_ALPHA = 1  # alpha > 1 aumenta contraste, alpha < 1 diminui contraste
         self.VISION_BETA = 0 # beta > 0 clareia, beta < 0 escurece
@@ -57,7 +57,7 @@ class TraineeVisionNode(Node):
         self.SALT_AND_PEPPER = False
         self.AMOUNT = 0.02
 
-        self.SPECKLE = True
+        self.SPECKLE = False
         self.STRENGTH = 0.2
 
 
@@ -313,7 +313,7 @@ class TraineeVisionNode(Node):
 
     def mission_status_callback(self,  msg: String):
         """Callback para receber o status da missão do drone."""
-        
+
         self.mission_status = msg.data
         
 
