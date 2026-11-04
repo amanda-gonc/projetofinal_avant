@@ -42,21 +42,31 @@ Este repositório contém a solução desenvolvida pelo **Grupo 3** do Trainee d
 
 ## 🛠️ Arquitetura & Tecnologias
 
-A solução baseia-se na integração entre a linguagem **Python** e o ecossistema de robótica **ROS 2**.A percepção do ambiente é feita por um nó de visão que combina uma rede neural (**YOLO11n**) com visão computacional clássica (**OpenCV**).
+A solução é desenvolvida em **Python** no ecossistema **ROS 2** e dividida em três nós, que se comunicam apenas por tópicos. O esquema abaixo mostra o fluxo de dados entre eles e a simulação:
 
-```
-                     +------------------------+
-                     |     Interface ROS 2    |
-                     |    (Nodes/Tópicos)     |
-                     +-----------+------------+
-                                 |
-        +------------------------+------------------------+
-        |                        |                        |
-+-------v-------+      +---------v----------+     +-------v-------+
-|   Simulação   |      |     Percepção      |     |    Controle   |
-|   (Gazebo)    |      |    (Nó de Visão)   |     |   (Scripts)   |
-|               |      |  YOLO11n + OpenCV  |     |               |
-+---------------+      +--------------------+     +---------------+
+```text
+      +------------------------------------------------------+
+      |                  Simulação (Gazebo)                  |
+      |              ArduPilot SITL  +  MAVROS               |
+      +-+--------+-------------------------------------+-----+
+        |        ^                                     |
+pose    |        | setpoints e                         | /camera/image_raw
+atual   |        | serviços                            | /camera/camera_info
+        v        |                                     v
+  +-----+--------+-----+                    +----------+----------+
+  |     navegacao      |  /mission_status   |        visao        |
+  |   rota + "isca"    |------------------->|   YOLO11n + OpenCV  |
+  +---------+----------+                    +----------+----------+
+            ^                                          |
+            |                                          | /detected_shapes
+            |                                          v
+      /emergencia                           +---------------------+
+      (LAND / RTL)                          |      integracao     |
+                                            |   ffmpeg + paplay   |
+                                            +----------+----------+
+                                                       |
+                                                       v
+                                                /sequencia_sons
 ```
 
 ### Principais Ferramentas
