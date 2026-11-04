@@ -44,7 +44,23 @@ class TraineeVisionNode(Node):
             'azul': [(self.BLUE_LOWER, self.BLUE_UPPER)]
         }
 
-        self.found_shapes = {}  # Dicionário para armazenar as formas encontradas
+        # ---- CONFIGURAÇÕES DE VISÃO PARA TESTES ----
+        self.VISION_DEBUGGING = True  # Usado para simular diferentes condições de visão
+        # Os testes foram feitos com alpha=0.7, beta=-20 e com alpha=1.6, beta=30
+        self.VISION_ALPHA = 1  # alpha > 1 aumenta contraste, alpha < 1 diminui contraste
+        self.VISION_BETA = 0 # beta > 0 clareia, beta < 0 escurece
+
+        # Diversos tipos de ruídos que podem ser testados na imagem. Precisa ter VISION_DEBUGGING = True
+        self.GAUSSIAN_NOISE = False
+        self.SIGMA = 15.0
+
+        self.SALT_AND_PEPPER = False
+        self.AMOUNT = 0.02
+
+        self.SPECKLE = True
+        self.STRENGTH = 0.2
+
+
 
         super().__init__('trainee_vision_node')
 
@@ -81,14 +97,54 @@ class TraineeVisionNode(Node):
         self.camera_matrix = None
         self.distortion_coeffs = None
 
+        self.found_shapes = {}  # Dicionário para armazenar as formas encontradas
         self.colors_sent = False  # Flag para indicar se as cores já foram enviadas
 
         self.call_classic = True 
         self.modelo = YOLO('/home/avant/simulation/starts/avant_ws/src/pkg_avant/models/formas-v2.pt')
         self.get_logger().info('Inscrição ativa, recebendo imagem da camera')
 
+    
+    def _add_gaussian_noise(self, frame: cv.typing.MatLike) -> cv.typing.MatLike:
+        """Adiciona ruído gaussiano à imagem."""
+
+        rng = np.random.default_rng()
+        noise = rng.normal(0, self.SIGMA, frame.shape).astype(np.float32)
+        noisy = np.clip(frame.astype(np.float32) + noise, 0, 255).astype(np.uint8)
+        return noisy
+
+
+    def _add_salt_pepper(self, frame: cv.typing.MatLike) -> cv.typing.MatLike:
+        """Adiciona ruído sal e pimenta à imagem."""
+
+        rng = np.random.default_rng()
+        noisy = frame.copy()
+        num = int(self.AMOUNT * frame.size)
+        # pixels pretos
+        coords = (rng.integers(0, frame.shape[0], num),
+                rng.integers(0, frame.shape[1], num),
+                rng.integers(0, frame.shape[2], num))
+        noisy[coords] = 0
+        # pixels brancos
+        coords = (rng.integers(0, frame.shape[0], num),
+                rng.integers(0, frame.shape[1], num),
+                rng.integers(0, frame.shape[2], num))
+        noisy[coords] = 255
+        return noisy
+
+
+    def _add_speckle(self, frame: cv.typing.MatLike) -> cv.typing.MatLike:
+        """Adiciona ruído speckle à imagem."""
+
+        rng = np.random.default_rng()
+        noise = rng.normal(0, self.STRENGTH, frame.shape).astype(np.float32)
+        noisy = np.clip(frame.astype(np.float32) * (1 + noise), 0, 255).astype(np.uint8)
+        return noisy
+
 
     def publish_detected_shapes(self):
+        """Publica as formas detectadas no tópico /detected_shapes se a missão estiver finalizada e as cores ainda não foram enviadas."""
+
         if self.mission_status == 'POUSO' and self.colors_sent == False:
             self.colors_sent = True
             # Guarda os nomes das cores e seus valores hexadecimais em uma lista e ordena pelo valor hexadecimal
@@ -102,12 +158,16 @@ class TraineeVisionNode(Node):
             self.get_logger().info(f"Formas detectadas publicadas: {detected_shapes_msg.data}")
 
 
-    def _camera_info_callback(self, msg):
+    def _camera_info_callback(self, msg: CameraInfo):
+        """Callback para receber informações da câmera e armazenar a matriz de calibração e os coeficientes de distorção."""
+
         self.camera_matrix = np.array(msg.k).reshape(3, 3)
         self.distortion_coeffs = np.array(msg.d)
 
 
-    def read_im(self, img_raw : Image):
+    def read_im(self, img_raw: Image):
+        """Callback para receber imagens da câmera, aplicar correção de distorção e realizar detecção de formas geométricas."""
+
         img_raw = self.bridge.imgmsg_to_cv2(img_raw, desired_encoding='bgr8')
 
         # Se a matriz da câmera e os coeficientes de distorção estiverem disponíveis, aplique a correção de distorção
@@ -115,6 +175,19 @@ class TraineeVisionNode(Node):
             img_cam = cv.undistort(img_raw, self.camera_matrix, self.distortion_coeffs)
         else:
             img_cam = img_raw
+
+        if self.VISION_DEBUGGING:
+            if self.VISION_ALPHA != 1 or self.VISION_BETA != 0:
+                img_cam = cv.convertScaleAbs(img_cam, alpha=self.VISION_ALPHA, beta=self.VISION_BETA)
+
+            if self.GAUSSIAN_NOISE:
+                img_cam = self._add_gaussian_noise(img_cam)
+
+            if self.SALT_AND_PEPPER:
+                img_cam = self._add_salt_pepper(img_cam)
+
+            if self.SPECKLE:
+                img_cam = self._add_speckle(img_cam)
 
         # Realiza a detecção de formas geométricas usando a rede neural ou visão clássica, dependendo da configuração
         if self.USE_NEURAL_NETWORK:
@@ -126,7 +199,9 @@ class TraineeVisionNode(Node):
         cv.waitKey(1)
 
 
-    def geometrics(self, img):
+    def geometrics(self, img: cv.typing.MatLike):
+        """Realiza a detecção de formas geométricas usando a rede neural YOLOv8."""
+
         # A variavel resultado recebe a resposta da rede para o frame atual
         resultado = self.modelo(img, device='cpu', conf=0.5, verbose=False)
         # figuras recebe a lista de figuras detectadas no frame
@@ -186,7 +261,9 @@ class TraineeVisionNode(Node):
                     self.get_logger().info(F"Hexagono verde detectado pela Rede Neural! HEX = {format(avg_color, '06x')} ({avg_color})")
 
 
-    def classic_vision(self, img):
+    def classic_vision(self, img: cv.typing.MatLike):
+        """Realiza a detecção de formas geométricas usando visão clássica baseada em cores e contornos."""
+
         hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
         for color_name, ranges in self.COLOR_RANGES.items():
@@ -234,7 +311,9 @@ class TraineeVisionNode(Node):
                         self.get_logger().info(f"{shape.capitalize()} {color_name} detectado por visão clássica! HEX = {format(avg_color, '06x')} ({avg_color})")
 
 
-    def mission_status_callback(self,  msg : String):
+    def mission_status_callback(self,  msg: String):
+        """Callback para receber o status da missão do drone."""
+        
         self.mission_status = msg.data
         
 
