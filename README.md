@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="static/avant_logo.png" alt="AVANT - UFMG Flying Robots Competition Team" width="450">
+
 # 🛸 Projeto Final Trainee — Eletrônica (AVANT UFMG)
 
 ![ROS 2](https://img.shields.io/badge/ROS2-Humble-blueviolet?style=for-the-badge&logo=ros)
